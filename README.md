@@ -8,7 +8,7 @@ This project aims to build a data pipeline solution for the revenue cycle manage
 
 ## How it works:
 <h3>Source Files</h3>
-We are referring to different open-source data for ICD (International Classfication of diseases) codes from the website WHO (World Health Organization) and NPI(National Provide Information) registry API. Custom data has also been generated using the faker module in python to emulate the EMR data of hospitals along with the patients and transaction information
+We are referring to different open-source data for ICD (International Classfication of diseases) codes from the website WHO (World Health Organization) and NPI(National Provider Information) registry API. Custom data has also been generated using the faker module in python to emulate the EMR data of hospitals along with the patients and transaction information
 
 | File Name  | File Type |
 | ------------- | ------------- |
@@ -93,11 +93,11 @@ The latest clean and accurate data in the Gold Layer is being used to write anal
 * Azure Key Vault
 
 ## Tasks performed:
-•	Built a solution architecture for a data engineering solution using Azure Databricks, Azure Data Lake Gen2, Azure Data Factory, and Power BI.
+•	Built a solution architecture for a data engineering solution using Azure Databricks, Azure Data Lake Gen2, Azure Data Factory, and Azure SQL DB.
 
 •	Created and used Azure Databricks service and the architecture of Databricks within Azure.
 
-•	Worked with Databricks notebooks and used Databricks utilities, magic commands, etc.
+•	Worked with Databricks notebooks and used Databricks utilities etc.
 
 •	Created, configured Databricks clusters, cluster pools, and jobs.
 
@@ -140,7 +140,7 @@ The latest clean and accurate data in the Gold Layer is being used to write anal
 
 <h3>Folders and files:</h3>
 
-- **API_data_extraction**: The folder contains the code to extract the ICD and NPI data using the public APIs to bring the data to te **Bronze Layer**
+- **API_data_extraction**: The folder contains the code to extract the ICD (International Classfication of diseases) and NPI (National Provider Information) data using the public APIs to bring the data to the **Bronze Layer**
 
 - **Bronze**: The folder contains notebooks to ingest the Claims and the CPT codes data from **Landing Zone** to the **Bronze Layer**
 
@@ -150,7 +150,7 @@ The latest clean and accurate data in the Gold Layer is being used to write anal
 
 - **silver**: The folder contains all notebooks that transform the raw data from the Bronze Layer into the **Silver Layer** by cleaning the data and creating a common data model between different versions of data
 
-- **data_engineering_faker_module**: This is the script used to generate the custom data for EMR and COT records
+- **data_engineering_faker_module**: This is the script used to generate the custom data for EMR and CPT records
 
 - **README**: Markdown file describing the details and working of the project
 
