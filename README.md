@@ -8,7 +8,7 @@ This project aims to build a data pipeline solution for the revenue cycle manage
 
 ## How it works:
 <h3>Source Files</h3>
-We are referring to different open-source data for ICD (International Classfication of diseases) codes from the website WHO (World Health Organization) and NPI(National Provider Information) registry API. Custom data has also been generated using the faker module in python to emulate the EMR data of hospitals along with the patients and transaction information
+We are referring to different open-source data for ICD (International Classfication of diseases) codes from the website WHO (World Health Organization) and NPI (National Provider Information) registry API. Custom data has also been generated using the faker module in python to emulate the EMR data of hospitals along with the patients and transaction information
 
 | File Name  | File Type |
 | ------------- | ------------- |
