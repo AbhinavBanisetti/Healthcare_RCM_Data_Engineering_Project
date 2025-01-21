@@ -88,6 +88,7 @@ The latest clean and accurate data in the Gold Layer is being used to write anal
 
 ## Azure Resources Used for this Project:
 * Azure Data Lake Storage
+* Azure SQL DB
 * Azure Data Factory
 * Azure Databricks
 * Azure Key Vault
