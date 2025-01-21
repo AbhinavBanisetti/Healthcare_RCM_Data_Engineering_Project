@@ -44,7 +44,7 @@ We create different **Linked Services** to interact with the various components 
 
 For each data item listed in the config file, following is the logical flow of the pipeline to bring the source data to the **Bronze Layer**
 
-![Image](https://github.com/user-attachments/assets/56ff90e8-4401-4d2e-96ea-34f2ac39045b)
+![Image](https://github.com/user-attachments/assets/f628d5b4-7af3-43a6-a05c-03d2b6343988)
 
 
 For Datasets present in the Azure SQL DB
