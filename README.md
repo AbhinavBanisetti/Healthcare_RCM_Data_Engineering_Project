@@ -24,19 +24,24 @@ We are referring to different open-source data for ICD (International Classficat
 
 <h3>Execution Overview:</h3>
 We are defining the flow of the pipeline execution with the config file which describes the order of execution of activities i.e metadata driven
+
 - The raw source data obtained through the custom data generator script is placed either in the form of tables in Azure SQL DB is migrated to the **Bronze Layer** using Full Load or Incremental load based on the kind of data being handled
 - The Claims data from the **Landing Zone** is migrated and ingested into the **Bronze Layer** and the ICD & NPI codes data obtained through the APIs is directly placed in the **Bronze Layer** (source of truth) using Azure Databricks
 - Once we have all the required data in the Bronze Layer, we clean and transform the data to fit into a common data model (CDM). The cleaned data is migrated to the **Silver Layer** in the form of Delta tables
 - The clean data from Silver Layer is filtered and ingested into the **Gold Layer**, wherein this data is used to create various facts and dimension tables for analytical purposed to calculate appropriate KPIs for measuring the accounts receivable status of the hospital
 
 ### ELT pipeline:
+End to End pipeline
+![Image](https://github.com/user-attachments/assets/7f3ace56-784a-487b-b0bc-646728fc9ea5)
+
 The entire flow of the ELT pipeline can be divided into 2 parts
 - **Data Ingestion to Bronze**: Bringing all the required source data to the **Bronze Zone**
 - **Data Transformation**: Migrating the data to the **Silver Layer** and the subsequent cleaning, transformations to the mobing of the data to the **Gold Layer**
 
 <h3>Data Ingestion to Bronze</h3>
 
-We create different **Linked Services** to interact with the various components of the pipeline namely the azure SQL DB, ADLS Gen2 Storage container, Databricks notebooks etc
+We create different **Linked Services** to interact with the various components of the pipeline namely the azure SQL DB, ADLS Gen2 Storage container, Databricks notebooks etc. The secrets are stored in a key vault for all the components to connected through these different Linked Services
+
 For each data item listed in the config file, following is the logical flow of the pipeline to bring the source data to the **Bronze Layer**
 
 ![Image](https://github.com/user-attachments/assets/56ff90e8-4401-4d2e-96ea-34f2ac39045b)
@@ -55,7 +60,7 @@ For Datasets present in the Azure SQL DB
 
 The claims data from the **Landing Zone** and the NPI & ICD data obtained through APIs are ingested to the Bronze Layer using Azure Databricks notebooks.
 
-All the files in the Bronze Layer are stored in the form of parquet file format
+All the files in the Bronze Layer are stored in a columnar format (i.e parquet)
 
 <h3>Data Transformation</h3>
 
@@ -69,7 +74,7 @@ All the files in the Bronze Layer are stored in the form of parquet file format
 
 4. We also model certain datasets by implementing the Slowly Changing Dimension (SCD) type 2 technique to track the changes in data over time
 
-This way the data in the Bronze layer is cleaned and modelled and migrated to the *8Silver Layer** in the form of delta tables
+This way the data in the Bronze layer is cleaned and modelled and migrated to the **Silver Layer** in the form of delta tables
 
 #### Silver to Gold
 
@@ -81,68 +86,11 @@ Schema for the facts and dimension tables
 #### Gold
 The latest clean and accurate data in the Gold Layer is being used to write analytical queries to calculate appropriate KPIs to determine the status of accounts receivables (AR)
 
-
-In the first pipeline, data stored in JSON and CSV format is read using Apache Spark with minimal transformation saved into a delta table. The transformation includes dropping columns, renaming headers, applying schema, and adding audited columns (```ingestion_date``` and ```file_source```) and ```file_date``` as the notebook parameter. This serves as a dynamic expression in ADF.
-
-In the second pipeline, Databricks SQL reads preprocessed delta files and transforms them into the final dimensional model tables in delta format. Transformations performed include dropping duplicates, joining tables using join, and aggregating using a window.
-
-ADF is scheduled to run every Sunday at 10 PM and is designed to skip the execution if there is no race that week. We have another pipeline to execute the ingestion pipeline and transformation pipeline using file_date as the parameter for the tumbling window trigger.
-
-![Screen Shot 2022-06-12 at 4 42 18 PM](https://user-images.githubusercontent.com/107358349/173252855-6a50be95-d7a7-481c-9438-8ae9fdc7df28.png)
-
 ## Azure Resources Used for this Project:
 * Azure Data Lake Storage
 * Azure Data Factory
 * Azure Databricks
 * Azure Key Vault
-
-## Project Requirements:
-The requirements for this project are broken down into six different parts which are
-
-#### 1. Data Ingestion Requirements
-* Ingest all 8 files into Azure data lake. 
-* Ingested data must have the same schema applied.
-* Ingested data must have audit columns.
-* Ingested data must be stored in  columnar format (i.e. parquet).
-* We must be able to analyze the ingested data via SQL.
-* Ingestion Logic must be able to handle the incremental load.
-
-#### 2. Data Transformation Requirements
-* Join the key information required for reporting to create a new table.
-* Join the key information required for analysis to create a new table.
-* Transformed tables must have audit columns.
-* We must be able to analyze the transformed data via SQL.
-* Transformed data must be stored in columnar format (i.e. parquet).
-* Transformation logic must be able to handle the incremental load.
-
-#### 3. Data Reporting Requirements
-* We want to be able to know Driver Standings.
-* We should be able to know Constructor Standings as well.
-
-#### 4. Data Analysis Requirements
-* Find the Dominant drivers.
-* Find the Dominant Teams. 
-* Visualize the Outputs.
-* Create Databricks dashboards.
-
-#### 5. Scheduling Requirements
-* Scheduled to run every Sunday at 10 pm.
-* Ability to monitor pipelines.
-* Ability to rerun failed pipelines.
-* Ability to set up alerts on failures
-
-#### 6. Other Non-Functional Requirements
-* Ability to delete individual records
-* Ability to see history and time travel
-* Ability to roll back to a previous version
-
-## Analysis Result:
-![image](https://user-images.githubusercontent.com/64007718/235310453-95b6d253-aaab-454b-87f1-8fb722600014.png)
-![image](https://user-images.githubusercontent.com/64007718/235310459-c9141816-2832-4be7-8902-3fce7096c88d.png)
-![image](https://user-images.githubusercontent.com/64007718/235310466-4a83e4ce-00c3-444c-b22a-83ad42530321.png)
-![image](https://user-images.githubusercontent.com/64007718/235310470-9c966e29-ba76-4c10-9554-f201d72ee636.png)
-![image](https://user-images.githubusercontent.com/64007718/235310476-98db1649-0fb4-45f5-bfc4-8892afc8bc80.png)
-![image](https://user-images.githubusercontent.com/64007718/235310486-98404d97-ed11-4be2-90c3-535f538cfdc9.png)
 
 ## Tasks performed:
 •	Built a solution architecture for a data engineering solution using Azure Databricks, Azure Data Lake Gen2, Azure Data Factory, and Power BI.
@@ -151,19 +99,11 @@ The requirements for this project are broken down into six different parts which
 
 •	Worked with Databricks notebooks and used Databricks utilities, magic commands, etc.
 
-•	Passed parameters between notebooks as well as created notebook workflows.
-
-•	Created, configured, and monitored Databricks clusters, cluster pools, and jobs.
+•	Created, configured Databricks clusters, cluster pools, and jobs.
 
 •	Mounted Azure Storage in Databricks using secrets stored in Azure Key Vault.
 
-•	Worked with Databricks Tables, Databricks File System (DBFS), etc.
-
 •	Used Delta Lake to implement a solution using Lakehouse architecture.
-
-•	Created dashboards to visualize the outputs.
-
-•	Connected to the Azure Databricks tables from PowerBI.
 
 ## Spark (Only PySpark and SQL)
 •	Spark architecture, Data Sources API, and Dataframe API.
@@ -194,42 +134,35 @@ The requirements for this project are broken down into six different parts which
 ## Azure Data Factory
 •	Created pipelines to execute Databricks notebooks.
 
-•	Designed robust pipelines to deal with unexpected scenarios such as missing files.
-
 •	Created dependencies between activities as well as pipelines.
-
-•	Scheduled the pipelines using data factory triggers to execute at regular intervals.
 
 •	Monitored the triggers/ pipelines to check for errors/ outputs.
 
 # About the Project:
 
-<h3>Folders:</h3>
+<h3>Folders and files:</h3>
 
-- 1-Authentication: The folder contains all notebooks to demonstrate different ways to access Azure Data Lake Gen2 containers into the Databricks file system.
+- **API_data_extraction**: The folder contains the code to extract the ICD and NPI data using the public APIs to bring the data to te **Bronze Layer**
 
-- 2-includes: The folder contains notebooks with common functions and path configurations.
+- **Bronze**: The folder contains notebooks to ingest the Claims and the CPT codes data from **Landing Zone** to the **Bronze Layer**
 
-- 3-Data Ingestion: The folder contains all notebooks to ingest the data from raw to processed.
+- **Gold**: The folder contains all notebooks to create facts and dimensions tables from the clean data present in the **Silver Layer**
 
-- 4-raw: The folder contains all notebooks to create raw tables in SQL.
+- **setup**: The folder contains all notebooks to create the ```AUDIT``` table and define some global variables for the databricks workspace
 
-- 5-Data Transformation: The folder contains all notebooks that transform the raw data into the processed layer.
+- **silver**: The folder contains all notebooks that transform the raw data from the Bronze Layer into the **Silver Layer** by cleaning the data and creating a common data model between different versions of data
 
-- 6-Data Analysis: The folder contains all notebooks which include an analysis of the data.
+- **data_engineering_faker_module**: This is the script used to generate the custom data for EMR and COT records
 
-- 7-demo: The folder contains notebooks with all the pre-requisite demos.
-
-- 8-Power Bi reports: This folder contains all the reports created from the analyzed data.
+- **README**: Markdown file describing the details and working of the project
 
 <h3>Technologies/Tools Used:</h3>
 <ul>
   <li>Pyspark</li> 
   <li>Spark SQL</li> 
   <li>Delta Lake</li> 
-  <li>Azure Databricks </li> 
+  <li>Azure Databricks</li> 
   <li>Azure Data Factory</li> 
   <li>Azure Date Lake Storage Gen2</li> 
-  <li>Azure Key Fault</li> 
-  <li>Power BI</li> 
+  <li>Azure Key Vault</li> 
 </ul>  
