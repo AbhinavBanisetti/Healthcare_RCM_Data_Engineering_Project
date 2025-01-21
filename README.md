@@ -24,11 +24,10 @@ We are referring to different open-source data for ICD (International Classficat
 
 <h3>Execution Overview:</h3>
 We are defining the flow of the pipeline execution with the config file which describes the order of execution of activities i.e metadata driven
-- The raw source data obtained through the custom data generator script is placed either in the form of tables in Azure SQL DB, the claims data are stored in the **Landing Zone** and the ICD & NPI codes data obtained through the APIs is directly placed in the **Bronze Layer** (source of truth) using Azure Databricks
-- Data from the **Landing Zone** is migrated and ingested into the **Bronze Layer**
-- Once we have all the required data in the Bronze Layer, the data is migrated to the **Silver Layer** using Full Load or incremental load based on the kind of data being handled
-- In the Silver Layer we clean and transform the data to fit into a common data model (CDM)
-- The cleaned data from Silver Layer is filtered and ingested into the **Gold Layer**, wherein this data is used to create various facts and dimension tables for analytical purposed to calculate appropriate KPIs for measuring the accounts receivable status of the hospital
+- The raw source data obtained through the custom data generator script is placed either in the form of tables in Azure SQL DB is migrated to the **Bronze Layer** using Full Load or Incremental load based on the kind of data being handled
+- The Claims data from the **Landing Zone** is migrated and ingested into the **Bronze Layer** and the ICD & NPI codes data obtained through the APIs is directly placed in the **Bronze Layer** (source of truth) using Azure Databricks
+- Once we have all the required data in the Bronze Layer, we clean and transform the data to fit into a common data model (CDM). The cleaned data is migrated to the **Silver Layer** in the form of Delta tables
+- The clean data from Silver Layer is filtered and ingested into the **Gold Layer**, wherein this data is used to create various facts and dimension tables for analytical purposed to calculate appropriate KPIs for measuring the accounts receivable status of the hospital
 
 ### ELT pipeline:
 The entire flow of the ELT pipeline can be divided into 2 parts
@@ -40,21 +39,48 @@ The entire flow of the ELT pipeline can be divided into 2 parts
 We create different **Linked Services** to interact with the various components of the pipeline namely the azure SQL DB, ADLS Gen2 Storage container, Databricks notebooks etc
 For each data item listed in the config file, following is the logical flow of the pipeline to bring the source data to the **Bronze Layer**
 
-![Image](https://github.com/user-attachments/assets/7814c103-49c6-4b62-a184-882789edc5d1)
+![Image](https://github.com/user-attachments/assets/56ff90e8-4401-4d2e-96ea-34f2ac39045b)
 
 
 For Datasets present in the Azure SQL DB
 1. Check if the data file is present in the **Bronze Layer**, if YES then archive the existing file into a seperate folder based on the day of the execution of pipeline
 
-2. In the other scenario of data file not being present or in the continuation step of step.no 1 we check if the pipeline needs to be run for the particular data element by looking at the **active_flag** parameter of the current item, if NO then data is not migrated to the Bronze Layer for the data file
+2. In the other scenario of data file not being present or in the continuation step of step.no 1 we check if the pipeline needs to be run for the particular data element by looking at the ```active_flag``` parameter of the current item, if NO then data is not migrated to the Bronze Layer for the data file
 
-3. if YES, then we check for another condition named **loadtype** wherein we verify if the data file needs to be migrated as whole at once i.e Full Load or Incrementally
+3. if YES, then we check for another condition named ```loadtype``` wherein we verify if the data file needs to be migrated as whole at once i.e Full Load or Incrementally
 
 4. For the Full Load scenario we directly upload all the data from Azure SQL DB to the Bronze Layer in parquet file format, and update the logs in an audit table which we create the databricks delta lake environment
 
-5. For Incremental load scenario, first we check the last update date of the records in the data file in the Bronze layer from the logs in the audit schema, based on this only the records updated post the **last_fetched_date** will be uploaded into the files of the Bronze Layer, post this activity we update the logs in the audit schema
+5. For Incremental load scenario, first we check the last update date of the records in the data file in the Bronze layer from the logs in the audit schema, based on this only the records updated post the ```last_fetched_date``` will be uploaded into the files of the Bronze Layer, post this activity we update the logs in the audit schema
 
-The claims data from the **Landing Zone** and the NPI & ICD data obtained through APIs are ingested to the Bronze Layer using Azure Databricks notebooks
+The claims data from the **Landing Zone** and the NPI & ICD data obtained through APIs are ingested to the Bronze Layer using Azure Databricks notebooks.
+
+All the files in the Bronze Layer are stored in the form of parquet file format
+
+<h3>Data Transformation</h3>
+
+#### Bronze to Silver
+
+1. Data is picked up from the Bronze Layer using Azure databricks notebooks
+
+2. Since there are instances where we are dealing with the same kinds of data from two different hospitals with probably different schemas, we are implementing a common data model (CDM) by changing the column names, creating a new field by concatenating the ID and source columns in the combined data of the 2 hospitals
+
+3. We implement data quality checks to identify records missing key information in different datasets, such records are flagged for data discrepancy
+
+4. We also model certain datasets by implementing the Slowly Changing Dimension (SCD) type 2 technique to track the changes in data over time
+
+This way the data in the Bronze layer is cleaned and modelled and migrated to the *8Silver Layer** in the form of delta tables
+
+#### Silver to Gold
+
+In this step of the pipeline execution, the clean data in the Silver layer is picked up using the Azure Databricks notebooks and different facts and dimension delta tables are generated using only the latest and clean data i.e records that passed the data quality checks. This is done to ensure that we have the latest and correct data without any data discrepancies so that this could be used for analytical & reporting purposes. 
+
+Schema for the facts and dimension tables
+![Image](https://github.com/user-attachments/assets/9380541b-dd8d-42d9-9325-1e3500a197e7)
+
+#### Gold
+The latest clean and accurate data in the Gold Layer is being used to write analytical queries to calculate appropriate KPIs to determine the status of accounts receivables (AR)
+
 
 In the first pipeline, data stored in JSON and CSV format is read using Apache Spark with minimal transformation saved into a delta table. The transformation includes dropping columns, renaming headers, applying schema, and adding audited columns (```ingestion_date``` and ```file_source```) and ```file_date``` as the notebook parameter. This serves as a dynamic expression in ADF.
 
