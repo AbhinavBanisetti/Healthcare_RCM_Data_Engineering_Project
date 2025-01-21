@@ -1,4 +1,4 @@
-# Revenue Cycle Management Pipeline
+# RCM Meridian Pipeline
 
 ## Project Overview
 This project aims to build a data pipeline solution for the revenue cycle management (RCM) processes of a hospital using Azure Databricks. This is an ELT pipeline built using Azure Data factory to ingest various raw source files into azure datalake to transform the data, improve the data quality at each stage of the pipeline workflow. The transformed data in the end with facts and dimension tables will be used as a source to generate appropriate KPIs to determine the status of the accounts receivable (AR) of the hospital. 
